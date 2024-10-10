@@ -2,6 +2,6 @@
 
 export default function SignUp() {
   return (
-    <div>SignOut</div>
+    <div>Sign Up</div>
   )
 }
