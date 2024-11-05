@@ -1,11 +1,8 @@
 import express, { Router } from 'express';
-import User from '../model/user.model.js';
+import User from '../models/user.model.js';
+import { get_all_users } from '../controllers/user.controller.js';
 const router = express.Router();
 
-router.get('/', (req, res)=>{
-    let users = User.find().then((users)=>{
-        res.json(users);
-    })
-})
+router.get('/', get_all_users)
 
 export default router;
