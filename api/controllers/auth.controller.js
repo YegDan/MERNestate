@@ -23,10 +23,10 @@ export const signin = async (req, res, next)=>{
     try{
         const user = await User.findOne({email})
         if(!user){
-            return errorHandler(404, "User not found")
+            return next(errorHandler(404, "User not found"))
         }
         if(!bcryptjs.compareSync(password, user.password)){
-            res.status(401).json("Invalid credentials")
+            return next(errorHandler(401, "Invalid credentials"))
         }
         const {password: hashedPass, ...rest} = user._doc
         const token = jwt.sign({id: user._id}, process.env.JWT_SECRET)
@@ -34,6 +34,32 @@ export const signin = async (req, res, next)=>{
         .status(200)
         .json(rest)
     }catch(error){
+        next(error)
+    }
+}
+
+export const google = async(req, res, next)=>{
+    try{
+        const user = await User.findOne({email: req.body.email})
+        if(user){
+            const {password, ...rest} = user._doc
+            const token = jwt.sign({id: user._id}, process.env.JWT_SECRET)
+            res.cookie("token", token, {httpOnly: true, expires: new Date(Date.now() + 24*60*60*1000)})
+            .status(200)
+            .json(rest)
+        }else{
+            const generatedPass = Math.random().toString(36).slice(-8)  + Math.random().toString(36).slice(-8)
+            const hashedPass = bcryptjs.hashSync(generatedPass, 10)
+            const username = req.body.name.split(" ").join("").toLowerCase() + Math.random().toString(36).slice(-4)
+            const newUser = new User({username, email: req.body.email, password: hashedPass, avatar: req.body.photo})
+            await newUser.save()
+            const {password, ...rest} = newUser
+            const token = jwt.sign({id: newUser._id}, process.env.JWT_SECRET)
+            res.cookie("token", token, {httpOnly: true, expires: new Date(Date.now() + 24*60*60*1000)})
+            .status(201)
+            .json(rest)
+        } 
+    }catch{
         next(error)
     }
 }
